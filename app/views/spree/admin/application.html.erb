@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Spree Admin - <%= Spree::Store.current.name %></title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    
+    <%= stylesheet_link_tag "spree/admin/application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags "spree/admin/application", "data-turbo-track": "reload" %>
+    
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+  </head>
+
+  <body>
+    <%= render 'spree/admin/shared/header' %>
+    <%= render 'spree/admin/shared/sidebar' %>
+    
+    <main class="main-content">
+      <%= yield %>
+    </main>
+    
+    <%= render 'spree/admin/shared/sidekick_injector' %>
+  </body>
+</html>
