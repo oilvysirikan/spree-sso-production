@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: spree
+    name: spree-backend
     runtime: ruby
     plan: free
     buildCommand: bundle install && bundle exec rails assets:precompile && bundle exec rails db:prepare
     startCommand: bundle exec puma -C config/puma.rb
-    healthCheckPath: /up
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -16,15 +16,24 @@ services:
           name: spree-redis
           type: redis
           property: connectionString
-      # - key: REDIS_CACHE_URL
-      #   fromService:
-      #     name: spree-redis-cache
-      #     type: redis
-      #     property: connectionString
       - key: SECRET_KEY_BASE
         generateValue: true
       - key: RAILS_LOG_LEVEL
         value: info
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+      - key: ENTRA_TENANT_ID
+        sync: false
+      - key: ENTRA_CLIENT_ID
+        sync: false
+      - key: ENTRA_CLIENT_SECRET
+        sync: false
+      - key: SPREE_PUBLISHABLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
 
   # uncomment to add background jobs, requires standard (paid) plan
   # - type: worker
