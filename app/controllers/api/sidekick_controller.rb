@@ -53,4 +53,5 @@ module Api
     def current_spree_user
       spree_current_user
     end
+  end
 end
