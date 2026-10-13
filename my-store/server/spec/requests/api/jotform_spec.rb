@@ -15,14 +15,14 @@ RSpec.describe 'Api::Jotform', type: :request do
   let!(:connection) { JotformConnection.create!(store: store, form_id: '262853852830463') }
 
   def post_webhook(token: connection.token, form_id: '262853852830463', submission_id: '5912345678901234567', raw: jotform_answers.to_json)
-    post "/api/jotform/webhook/#{token}", params: { formID: form_id, submissionID: submission_id, rawRequest: raw }
+    post "/api/jotform/webhook?token=#{token}", params: { formID: form_id, submissionID: submission_id, rawRequest: raw }
   end
 
   it 'stores the submission and enqueues processing without doing it inline' do
     expect { post_webhook }
       .to change(JotformSubmission, :count).by(1)
       .and have_enqueued_job(JotformSubmissionJob)
-      .and not_change(Spree.user_class, :count)
+      .and not_change(Spree.customer_class, :count)
 
     expect(response).to have_http_status(:ok)
     expect(json_response[:status]).to eq('accepted')

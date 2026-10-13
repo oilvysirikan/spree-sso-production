@@ -14,7 +14,7 @@ class CreateJotformConnections < ActiveRecord::Migration[8.1]
 
     create_table :jotform_submissions do |t|
       t.references :jotform_connection, null: false, foreign_key: true
-      t.references :spree_user, foreign_key: { to_table: :spree_users }
+      t.references :spree_customer, foreign_key: { to_table: :spree_customers }
       t.string :submission_id, null: false
       t.string :status, null: false, default: 'pending'
       t.jsonb :payload, null: false, default: {}

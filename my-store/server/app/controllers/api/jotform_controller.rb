@@ -1,13 +1,13 @@
 module Api
   # Receives Jotform webhooks. Each store gets its own URL:
-  #   POST /api/jotform/webhook/:token
+  #   POST /api/jotform/webhook?token=<connection token>
   #
   # The request is only validated and stored here; turning it into a Spree
   # customer happens in JotformSubmissionJob so Jotform gets a fast 200.
   class JotformController < ActionController::API
-    # POST /api/jotform/webhook/:token
+    # POST /api/jotform/webhook?token=...
     def webhook
-      connection = JotformConnection.active.find_by(token: params[:token].to_s)
+      connection = JotformConnection.find_for_webhook(params[:token].to_s)
       return head :not_found unless connection
       return head :forbidden unless connection.form_matches?(params[:formID])
 

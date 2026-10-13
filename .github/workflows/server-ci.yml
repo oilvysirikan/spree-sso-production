@@ -1,0 +1,56 @@
+name: Server CI
+
+# Tests my-store/server — the Spree 6 app deployed to Render.
+# (backend-ci.yml tests the root Spree 5 app.)
+on:
+  push:
+    branches: [main]
+    paths: ['my-store/server/**', '.github/workflows/server-ci.yml']
+  pull_request:
+    branches: [main]
+    paths: ['my-store/server/**', '.github/workflows/server-ci.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: my-store/server
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgres://postgres@localhost:5432/spree_test
+      RAILS_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: my-store/server
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Precompile assets
+        run: bin/rake assets:precompile
+
+      - name: Run tests
+        run: bundle exec rspec

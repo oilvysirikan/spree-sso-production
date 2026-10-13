@@ -6,7 +6,6 @@ Rails.application.routes.draw do
     post 'sso/create_user', to: 'sso#create_user'
     post 'sidekick/chat', to: 'sidekick#chat'
     get 'sidekick/status/:session_id', to: 'sidekick#check_status'
-    post 'jotform/webhook/:token', to: 'jotform#webhook', as: :jotform_webhook
   end
   Spree::Core::Engine.add_routes do
     # Admin authentication

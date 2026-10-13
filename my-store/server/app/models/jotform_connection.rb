@@ -31,6 +31,37 @@ class JotformConnection < ApplicationRecord
 
   scope :active, -> { where(active: true) }
 
+  # Production runs on Render's free plan (no shell), so the first store's
+  # connection is configured with env vars instead of the rake task:
+  #   JOTFORM_STORE          store code or prefixed id (store_UkLWZg9DAJ)
+  #   JOTFORM_FORM_ID        Jotform form id (optional but recommended)
+  #   JOTFORM_WEBHOOK_TOKEN  long random secret used in the webhook URL
+  # The row is created the first time Jotform calls the matching URL.
+  def self.find_for_webhook(token)
+    return if token.blank?
+
+    active.find_by(token: token) || create_from_env(token)
+  end
+
+  def self.create_from_env(token)
+    env_token = ENV['JOTFORM_WEBHOOK_TOKEN'].to_s
+    return if env_token.length < 32 || !ActiveSupport::SecurityUtils.secure_compare(token, env_token)
+    return if exists?(token: env_token) # present but deactivated
+
+    store = find_store(ENV['JOTFORM_STORE'].to_s)
+    return unless store
+
+    create!(store: store, form_id: ENV['JOTFORM_FORM_ID'].presence, token: env_token, name: 'env')
+  rescue ActiveRecord::RecordNotUnique
+    active.find_by(token: env_token)
+  end
+
+  def self.find_store(ref)
+    return if ref.blank?
+
+    Spree::Store.find_by(code: ref) || Spree::Store.find_by_prefix_id(ref)
+  end
+
   def mapping
     DEFAULT_FIELD_MAPPING.merge(field_mapping.to_h.stringify_keys)
   end
@@ -40,7 +71,7 @@ class JotformConnection < ApplicationRecord
   end
 
   def webhook_path
-    "/api/jotform/webhook/#{token}"
+    "/api/jotform/webhook?token=#{token}"
   end
 
   private
