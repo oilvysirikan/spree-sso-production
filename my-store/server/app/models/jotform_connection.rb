@@ -36,6 +36,7 @@ class JotformConnection < ApplicationRecord
   #   JOTFORM_STORE          store code or prefixed id (store_UkLWZg9DAJ)
   #   JOTFORM_FORM_ID        Jotform form id (optional but recommended)
   #   JOTFORM_WEBHOOK_TOKEN  long random secret used in the webhook URL
+  #   JOTFORM_CREATE_CUSTOMERS  "false" to only store submissions (default true)
   # The row is created the first time Jotform calls the matching URL.
   def self.find_for_webhook(token)
     return if token.blank?
@@ -51,7 +52,8 @@ class JotformConnection < ApplicationRecord
     store = find_store(ENV['JOTFORM_STORE'].to_s)
     return unless store
 
-    create!(store: store, form_id: ENV['JOTFORM_FORM_ID'].presence, token: env_token, name: 'env')
+    create!(store: store, form_id: ENV['JOTFORM_FORM_ID'].presence, token: env_token, name: 'env',
+            create_customers: ENV.fetch('JOTFORM_CREATE_CUSTOMERS', 'true') != 'false')
   rescue ActiveRecord::RecordNotUnique
     active.find_by(token: env_token)
   end

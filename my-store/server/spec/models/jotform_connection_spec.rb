@@ -50,7 +50,7 @@ RSpec.describe JotformConnection, type: :model do
     let(:env_token) { 'e' * 40 }
 
     around do |example|
-      keys = %w[JOTFORM_STORE JOTFORM_FORM_ID JOTFORM_WEBHOOK_TOKEN]
+      keys = %w[JOTFORM_STORE JOTFORM_FORM_ID JOTFORM_WEBHOOK_TOKEN JOTFORM_CREATE_CUSTOMERS]
       saved = ENV.to_h.slice(*keys)
       ENV['JOTFORM_STORE'] = store.code
       ENV['JOTFORM_FORM_ID'] = '262853852830463'
@@ -73,6 +73,12 @@ RSpec.describe JotformConnection, type: :model do
 
       expect(connection).to have_attributes(store: store, form_id: '262853852830463', token: env_token)
       expect(described_class.find_for_webhook(env_token)).to eq(connection)
+    end
+
+    it 'can be configured to only store submissions' do
+      ENV['JOTFORM_CREATE_CUSTOMERS'] = 'false'
+
+      expect(described_class.find_for_webhook(env_token).create_customers).to be(false)
     end
 
     it 'finds the store by prefixed id' do

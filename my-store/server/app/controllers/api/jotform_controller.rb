@@ -17,7 +17,12 @@ module Api
 
       submission = connection.submissions.create!(
         submission_id: submission_id,
-        payload: { 'form_id' => params[:formID].to_s, 'answers' => answers }
+        payload: {
+          'form_id' => params[:formID].to_s,
+          'form_title' => params[:formTitle].to_s,
+          'pretty' => params[:pretty].to_s, # "Question:Answer, ..." with the form's own labels
+          'answers' => answers
+        }
       )
       JotformSubmissionJob.perform_later(submission.id)
 

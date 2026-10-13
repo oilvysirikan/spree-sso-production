@@ -7,6 +7,7 @@ class CreateJotformConnections < ActiveRecord::Migration[8.1]
       t.string :token, null: false
       t.jsonb :field_mapping, null: false, default: {}
       t.boolean :active, null: false, default: true
+      t.boolean :create_customers, null: false, default: true
 
       t.timestamps
     end

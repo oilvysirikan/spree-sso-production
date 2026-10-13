@@ -15,6 +15,11 @@ class JotformSubmissionJob < ApplicationJob
     submission = JotformSubmission.find_by(id: submission_id)
     return if submission.nil? || submission.status == 'processed'
 
+    # Forms that aren't customer sign-ups (e.g. job applications) are only stored.
+    unless submission.jotform_connection.create_customers?
+      return submission.update!(status: 'processed', processed_at: Time.current)
+    end
+
     importer = Jotform::CustomerImporter.new(submission)
     customer = importer.call
     submission.update!(status: 'processed', spree_customer: customer,

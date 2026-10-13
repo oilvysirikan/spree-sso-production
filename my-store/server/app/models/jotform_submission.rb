@@ -12,4 +12,8 @@ class JotformSubmission < ApplicationRecord
   def answers
     payload.fetch('answers', {})
   end
+
+  def pretty
+    payload['pretty'].presence
+  end
 end

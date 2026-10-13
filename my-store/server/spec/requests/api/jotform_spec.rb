@@ -15,7 +15,8 @@ RSpec.describe 'Api::Jotform', type: :request do
   let!(:connection) { JotformConnection.create!(store: store, form_id: '262853852830463') }
 
   def post_webhook(token: connection.token, form_id: '262853852830463', submission_id: '5912345678901234567', raw: jotform_answers.to_json)
-    post "/api/jotform/webhook?token=#{token}", params: { formID: form_id, submissionID: submission_id, rawRequest: raw }
+    post "/api/jotform/webhook?token=#{token}",
+         params: { formID: form_id, submissionID: submission_id, rawRequest: raw, formTitle: 'Test form', pretty: 'Email:somchai@example.com' }
   end
 
   it 'stores the submission and enqueues processing without doing it inline' do
@@ -31,6 +32,7 @@ RSpec.describe 'Api::Jotform', type: :request do
     expect(submission.jotform_connection).to eq(connection)
     expect(submission.status).to eq('pending')
     expect(submission.answers['q3_email']).to eq('Somchai@Example.com')
+    expect(submission.pretty).to eq('Email:somchai@example.com')
   end
 
   it 'returns 200 for a duplicate delivery and does not enqueue again' do

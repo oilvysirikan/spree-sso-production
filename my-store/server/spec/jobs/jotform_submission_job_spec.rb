@@ -86,6 +86,17 @@ RSpec.describe JotformSubmissionJob, type: :job do
     expect(Spree.customer_class.find_by(email: 'custom@example.com')).to be_present
   end
 
+  context 'when the connection only stores submissions' do
+    let(:connection) { JotformConnection.create!(store: store, create_customers: false) }
+    let(:answers) { { 'q3_input3' => 'สมชาย ใจดี', 'q10_input10' => '0812345678' } }
+
+    it 'marks the submission processed without creating a customer' do
+      expect { described_class.perform_now(submission.id) }.not_to change(Spree.customer_class, :count)
+
+      expect(submission.reload).to have_attributes(status: 'processed', spree_customer: nil, error_message: nil)
+    end
+  end
+
   context 'without an email' do
     let(:answers) { jotform_answers('q3_email' => '') }
 
