@@ -2,6 +2,15 @@ require 'rails_helper'
 require_relative '../../support/jotform_helpers'
 
 RSpec.describe 'Api::Jotform', type: :request do
+  # config/application.rb pins the adapter to Sidekiq; ActiveJob matchers need :test.
+  around do |example|
+    original = ActiveJob::Base.queue_adapter
+    ActiveJob::Base.queue_adapter = :test
+    example.run
+  ensure
+    ActiveJob::Base.queue_adapter = original
+  end
+
   let(:store) { create(:store) }
   let!(:connection) { JotformConnection.create!(store: store, form_id: '262853852830463') }
 
@@ -55,11 +64,11 @@ RSpec.describe 'Api::Jotform', type: :request do
 
   it 'returns 422 for a malformed rawRequest' do
     post_webhook(raw: 'not json')
-    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response).to have_http_status(:unprocessable_content)
   end
 
   it 'returns 422 without a submission id' do
     post_webhook(submission_id: '')
-    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response).to have_http_status(:unprocessable_content)
   end
 end

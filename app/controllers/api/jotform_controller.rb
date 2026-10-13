@@ -13,7 +13,7 @@ module Api
 
       submission_id = params[:submissionID].presence
       answers = parse_raw_request(params[:rawRequest])
-      return render(json: { error: 'submissionID and rawRequest are required' }, status: :unprocessable_entity) unless submission_id && answers
+      return render(json: { error: 'submissionID and rawRequest are required' }, status: :unprocessable_content) unless submission_id && answers
 
       submission = connection.submissions.create!(
         submission_id: submission_id,

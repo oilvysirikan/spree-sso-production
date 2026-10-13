@@ -63,14 +63,17 @@ module Jotform
     end
 
     def tag_with_store(user, customer_code)
-      meta = (user.private_metadata || {}).deep_dup
-      jotform = meta['jotform'] ||= {}
-      jotform['store_codes'] = (Array(jotform['store_codes']) | [store.code]).compact
-      if customer_code.present?
-        jotform['customer_codes'] ||= {}
-        jotform['customer_codes'][store.code] = customer_code
-      end
-      user.private_metadata = meta
+      meta = (user.private_metadata || {}).to_h.deep_stringify_keys
+      jotform = meta.fetch('jotform', {})
+      store_codes = Array(jotform['store_codes']) | [store.code]
+      customer_codes = jotform.fetch('customer_codes', {})
+      customer_codes = customer_codes.merge(store.code => customer_code) if customer_code.present?
+
+      # Build the nested hash before assigning: writing into a stored
+      # HashWithIndifferentAccess copies nested hashes, dropping later changes.
+      user.private_metadata = meta.merge(
+        'jotform' => jotform.merge('store_codes' => store_codes.compact, 'customer_codes' => customer_codes)
+      )
     end
 
     def attach_address(user, values)
