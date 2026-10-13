@@ -27,13 +27,7 @@ module Jotform
       email = values['email'].to_s.strip.downcase
       raise MissingEmail, 'email is missing from the submission' if email.blank?
 
-      customer = Spree.customer_class.where('LOWER(email) = ?', email).first || Spree.customer_class.new(email: email)
-      CUSTOMER_ATTRIBUTES.each do |attr|
-        customer[attr] = values[attr] if customer[attr].blank? && values[attr].present?
-      end
-      customer.tag_list.add(TAG)
-      tag_with_store(customer, values['customer_code'])
-      customer.save!
+      customer = save_customer(email, values)
 
       # A rejected address (e.g. Thailand needs a province Spree recognises)
       # must not lose the customer, so it is saved separately as a warning.
@@ -68,6 +62,27 @@ module Jotform
 
     def extract_values
       connection.mapping.transform_values { |path| self.class.dig_answer(submission.answers, path) }
+    end
+
+    # spree_customers has a unique index on email. If a concurrent job creates
+    # the same customer first, the insert fails; look it up again and fill in.
+    def save_customer(email, values)
+      attempts = 0
+      begin
+        attempts += 1
+        customer = Spree.customer_class.where('LOWER(email) = ?', email).first || Spree.customer_class.new(email: email)
+        CUSTOMER_ATTRIBUTES.each do |attr|
+          customer[attr] = values[attr] if customer[attr].blank? && values[attr].present?
+        end
+        customer.tag_list.add(TAG)
+        tag_with_store(customer, values['customer_code'])
+        customer.save!
+        customer
+      rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+        email_taken = e.is_a?(ActiveRecord::RecordNotUnique) || e.record.errors.of_kind?(:email, :taken)
+        retry if email_taken && attempts < 2
+        raise
+      end
     end
 
     def tag_with_store(customer, customer_code)

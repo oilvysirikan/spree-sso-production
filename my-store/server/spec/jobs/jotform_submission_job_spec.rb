@@ -47,7 +47,19 @@ RSpec.describe JotformSubmissionJob, type: :job do
     expect { described_class.perform_now(again.id) }.not_to change(Spree::Address, :count)
   end
 
-  it 'never overwrites an existing customer profile' do
+  it 'reuses a customer created concurrently by another job' do
+    other = create(:customer, email: 'somchai@example.com', first_name: 'Other', last_name: 'Job')
+    calls = 0
+    allow(Spree.customer_class).to receive(:where).and_wrap_original do |original, *args|
+      calls += 1
+      calls == 1 ? Spree.customer_class.none : original.call(*args) # first lookup misses the row
+    end
+
+    expect { described_class.perform_now(submission.id) }.not_to change(Spree.customer_class, :count)
+    expect(submission.reload).to have_attributes(status: 'processed', spree_customer: other)
+  end
+
+    it 'never overwrites an existing customer profile' do
     existing = create(:customer, email: 'somchai@example.com', first_name: 'Original', last_name: 'Owner', phone: nil)
 
     expect { described_class.perform_now(submission.id) }.not_to change(Spree.customer_class, :count)
