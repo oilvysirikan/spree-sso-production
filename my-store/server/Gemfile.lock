@@ -823,6 +823,7 @@ DEPENDENCIES
   bundler-audit
   debug
   dotenv-rails
+  httparty
   image_processing (~> 1.2)
   lograge
   mission_control-jobs
