@@ -3,7 +3,7 @@ require_relative '../support/jotform_helpers' # not_change matcher
 
 RSpec.describe 'LINE Login while disabled', type: :request do
   let(:customer) { create(:customer) }
-  let!(:social) { SocialAccount.create!(spree_user: customer, provider: 'line', uid: 'U-existing') }
+  let!(:social) { SocialAccount.create!(spree_customer: customer, provider: 'line', uid: 'U-existing') }
 
   before { allow(HTTParty).to receive(:post).and_call_original }
 

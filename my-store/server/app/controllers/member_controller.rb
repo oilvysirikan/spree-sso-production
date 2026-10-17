@@ -4,12 +4,12 @@ class MemberController < ApplicationController
   before_action :require_line_session
 
   def show
-    social = SocialAccount.includes(:spree_user).find_by(provider: 'line', uid: @line_uid)
+    social = SocialAccount.includes(:spree_customer).find_by(provider: 'line', uid: @line_uid)
     if social.nil?
       return render :not_linked
     end
 
-    @user         = social.spree_user
+    @user         = social.spree_customer
     @line_name    = social.line_display_name
     @line_picture = social.line_picture_url
     @points       = @user.public_metadata['shopify_points'].to_i

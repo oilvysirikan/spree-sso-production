@@ -54,7 +54,7 @@ class Api::LineAuthController < ApplicationController
 
   def find_or_create_user(profile)
     existing = SocialAccount.find_by(provider: 'line', uid: profile[:sub])
-    return existing.spree_user if existing
+    return existing.spree_customer if existing
 
     return nil if profile[:email].blank?
 
@@ -73,7 +73,7 @@ class Api::LineAuthController < ApplicationController
 
   def link_social_account(user, profile)
     SocialAccount.find_or_create_by(provider: 'line', uid: profile[:sub]) do |sa|
-      sa.spree_user = user
+      sa.spree_customer = user
     end.tap do |sa|
       sa.update!(
         profile_data: { name: profile[:name], picture: profile[:picture] }
