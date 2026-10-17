@@ -1,0 +1,89 @@
+<%# LINE LIFF login page — runs inside LINE app %>
+<style>
+  .login-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh;
+    padding: 24px; text-align: center;
+    background: linear-gradient(160deg, #e8fdf0 0%, #f0f2f5 100%);
+  }
+  .login-logo { font-size: 64px; margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }
+  p  { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 28px; }
+  .btn-line {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: #06C755; color: #fff;
+    border: none; border-radius: 99px;
+    padding: 15px 36px; font-size: 16px; font-weight: 700;
+    cursor: pointer; width: 100%; max-width: 320px;
+    box-shadow: 0 4px 12px rgba(6,199,85,0.35);
+  }
+  .btn-line:active { opacity: 0.85; }
+  .line-icon { width: 22px; height: 22px; }
+  .status { font-size: 12px; color: #9ca3af; margin-top: 16px; min-height: 18px; }
+</style>
+
+<div class="login-wrap">
+  <div class="login-logo">🛍️</div>
+  <h1>เข้าสู่ระบบสมาชิก</h1>
+  <p>เชื่อมต่อบัญชี LINE ของคุณ<br>เพื่อดูคะแนนและประวัติการสั่งซื้อ</p>
+  <button class="btn-line" id="loginBtn" onclick="lineLogin()">
+    <svg class="line-icon" viewBox="0 0 24 24" fill="white">
+      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.105.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+    </svg>
+    เข้าสู่ระบบด้วย LINE
+  </button>
+  <div class="status" id="statusMsg"></div>
+</div>
+
+<script>
+  const LIFF_ID = '<%= ENV["LINE_LIFF_ID"] %>';
+  const status = document.getElementById('statusMsg');
+
+  async function lineLogin() {
+    document.getElementById('loginBtn').disabled = true;
+    status.textContent = 'กำลังเชื่อมต่อ…';
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: window.location.href });
+        return;
+      }
+      const idToken = liff.getIDToken();
+      const res = await fetch('/api/line/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
+        body: JSON.stringify({ id_token: idToken }),
+        credentials: 'same-origin'
+      });
+      if (res.ok) {
+        window.location.href = '/member';
+      } else {
+        status.textContent = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        document.getElementById('loginBtn').disabled = false;
+      }
+    } catch (e) {
+      console.error(e);
+      status.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
+      document.getElementById('loginBtn').disabled = false;
+    }
+  }
+
+  // Auto-login if already logged in via LIFF
+  (async () => {
+    if (!LIFF_ID || LIFF_ID === '') return;
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        status.textContent = 'กำลังตรวจสอบ…';
+        const idToken = liff.getIDToken();
+        const res = await fetch('/api/line/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
+          body: JSON.stringify({ id_token: idToken }),
+          credentials: 'same-origin'
+        });
+        if (res.ok) window.location.href = '/member';
+      }
+    } catch (_) {}
+  })();
+</script>
