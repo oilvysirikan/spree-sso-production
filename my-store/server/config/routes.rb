@@ -1,4 +1,14 @@
 Rails.application.routes.draw do
+  # LINE Login callback + logout (session-based, no JSON API auth needed)
+  namespace :api do
+    post 'line/callback', to: 'line_auth#callback'
+    post 'line/logout',   to: 'line_auth#logout'
+  end
+
+  # Member portal (LINE LIFF)
+  get  '/member',       to: 'member#show',  as: :member
+  get  '/member/login', to: 'member#login', as: :member_login
+
   # Routes for your own Spree API v3 resources. `bin/rails g spree:api_resource`
   # adds a line here for each resource it generates; you can also add your own.
   Spree::Core::Engine.add_routes do

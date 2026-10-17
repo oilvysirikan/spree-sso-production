@@ -86,3 +86,4 @@ gem 'gemini-ai'
 # OAuth & SSO gems
 gem 'oauth2', '~> 2.0'
 gem 'spree_cli', '~> 5.3.0'
+

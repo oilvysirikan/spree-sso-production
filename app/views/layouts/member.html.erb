@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#06C755">
+  <title>สมาชิก</title>
+  <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Noto Sans Thai', sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+    .app { max-width: 430px; margin: 0 auto; min-height: 100vh; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <%= yield %>
+  </div>
+</body>
+</html>

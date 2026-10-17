@@ -1,0 +1,58 @@
+<style>
+  .login-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; padding: 24px; }
+  .logo { font-size: 48px; margin-bottom: 8px; }
+  h1 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  p { font-size: 13px; color: #6b7280; margin-bottom: 32px; text-align: center; line-height: 1.6; }
+  .btn-line { background: #06C755; color: #fff; border: none; border-radius: 99px; padding: 14px 0; width: 100%; max-width: 280px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-line svg { width: 22px; height: 22px; }
+  .spinner { display: none; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="login-wrap">
+  <div class="logo">🛍️</div>
+  <h1>สมาชิกสะสมคะแนน</h1>
+  <p>เข้าสู่ระบบด้วย LINE<br>เพื่อดูคะแนนสะสมและประวัติการสั่งซื้อ</p>
+  <button class="btn-line" id="line-btn" onclick="loginWithLine()">
+    <svg viewBox="0 0 24 24" fill="white"><path d="M19.365 9.89c.50 0 .906.407.906.907s-.407.907-.906.907h-2.444v1.527h2.444c.5 0 .906.406.906.906s-.407.907-.906.907H16.01a.906.906 0 0 1-.906-.907V9.89c0-.5.406-.906.906-.906h3.355zm-5.29 0c.5 0 .906.407.906.907v4.247a.906.906 0 0 1-1.812 0V9.89c0-.5.406-.906.906-.906zm-2.577 0c.5 0 .906.407.906.907v2.677l-2.05-3.18a.906.906 0 0 0-.757-.404.906.906 0 0 0-.906.906v4.247a.906.906 0 0 0 1.813 0v-2.677l2.05 3.18c.163.253.44.404.736.404h.014a.906.906 0 0 0 .906-.907V9.89a.906.906 0 0 0-.906-.906h-.006a.906.906 0 0 0-.8.49V9.89zM4.63 9.89a.906.906 0 0 0-.907.907v4.247a.906.906 0 0 0 .906.907H7.98c.5 0 .906-.407.906-.907s-.407-.906-.906-.906H5.536V9.89c0-.5-.406-.906-.906-.906zM12 2C6.477 2 2 5.952 2 10.8c0 4.315 3.532 7.92 8.3 8.66.323.07.764.21.875.483.1.248.065.636.03.887l-.14.855c-.042.25-.196.977.854.532 1.05-.445 5.657-3.332 7.718-5.706C21.216 14.022 22 12.487 22 10.8 22 5.952 17.523 2 12 2z"/></svg>
+    เข้าสู่ระบบด้วย LINE
+  </button>
+  <div class="spinner" id="spinner"></div>
+</div>
+
+<script>
+  const LIFF_ID = '<%= ENV["LINE_LIFF_ID"] %>';
+
+  async function loginWithLine() {
+    document.getElementById('line-btn').style.display = 'none';
+    document.getElementById('spinner').style.display = 'block';
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: window.location.href });
+        return;
+      }
+      const profile = await liff.getProfile();
+      const idToken = liff.getIDToken();
+      // Send LINE ID token to backend
+      const res = await fetch('/api/sso/validate_token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken, provider: 'line' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = '/member?line_user_id=' + profile.userId;
+      }
+    } catch (e) {
+      console.error(e);
+      document.getElementById('line-btn').style.display = 'flex';
+      document.getElementById('spinner').style.display = 'none';
+    }
+  }
+
+  // Auto-login if already in LIFF
+  window.addEventListener('load', () => {
+    if (LIFF_ID && LIFF_ID !== '') loginWithLine();
+  });
+</script>

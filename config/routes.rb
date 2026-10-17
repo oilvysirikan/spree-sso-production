@@ -6,6 +6,31 @@ Rails.application.routes.draw do
     post 'sso/create_user', to: 'sso#create_user'
     post 'sidekick/chat', to: 'sidekick#chat'
     get 'sidekick/status/:session_id', to: 'sidekick#check_status'
+
+    namespace :payments do
+      # LINE Pay
+      post 'line_pay/request',          to: 'line_pay#request_payment'
+      post 'line_pay/confirm',          to: 'line_pay#confirm_payment'
+      get  'line_pay/cancel',           to: 'line_pay#cancel_payment'
+      post 'line_pay/webhook',          to: 'line_pay#webhook'
+
+      # PromptPay (via Omise/OpnPayments)
+      post 'promptpay/create_qr',       to: 'promptpay#create_qr'
+      get  'promptpay/status/:id',      to: 'promptpay#status'
+      post 'promptpay/webhook',         to: 'promptpay#webhook'
+    end
+
+    # Shopify sync
+    post 'shopify/sync_products',       to: 'shopify#sync_products'
+    post 'shopify/sync_orders',         to: 'shopify#sync_orders'
+    post 'shopify/webhook',             to: 'shopify#webhook'
+    get  'shopify/status',             to: 'shopify#status'
+
+    # LINE Messaging + Member
+    post 'line/webhook',                to: 'line#webhook'
+    get  'line/member/:line_user_id',   to: 'line#member'
+    post 'line/link_shopify',           to: 'line#link_shopify'
+    post 'line/notify_back_in_stock',   to: 'line#notify_back_in_stock'
   end
   Spree::Core::Engine.add_routes do
     # Admin authentication
@@ -42,6 +67,10 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
   get "api/health", to: proc { [200, {}, ["OK"]] }
+
+  # Member portal (LINE LIFF)
+  get  '/member',        to: 'member#show',  as: :member
+  get  '/member/login',  to: 'member#login', as: :member_login
 
   root to: redirect('/admin')
 end

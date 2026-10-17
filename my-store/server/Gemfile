@@ -69,6 +69,7 @@ gem 'solid_queue'
 # Job dashboard at /jobs
 gem 'mission_control-jobs'
 gem 'rack-cors'
+gem 'httparty'
 gem 'thruster', require: false
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

@@ -90,6 +90,8 @@ module Api
       case provider
       when 'entra_id'
         validate_entra_id_token(token)
+      when 'line'
+        validate_line_token(token)
       else
         nil
       end
@@ -127,6 +129,36 @@ module Api
         Rails.logger.error "JWT Decode Error: #{e.message}"
         nil
       end
+    end
+
+    def validate_line_token(id_token)
+      response = HTTParty.post(
+        'https://api.line.me/oauth2/v2.1/verify',
+        body: {
+          id_token: id_token,
+          client_id: ENV['LINE_CHANNEL_ID']
+        },
+        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+      )
+
+      return nil unless response.success?
+
+      payload = response.parsed_response
+      return nil unless payload['sub']
+
+      {
+        sub: payload['sub'],
+        email: payload['email'],
+        first_name: payload['name']&.split&.first,
+        last_name: payload['name']&.split&.last,
+        name: payload['name'],
+        picture: payload['picture'],
+        provider: 'line',
+        provider_id: payload['sub']
+      }
+    rescue StandardError => e
+      Rails.logger.error "LINE Token Validation Error: #{e.message}"
+      nil
     end
 
     def find_or_create_user(user_data, provider)

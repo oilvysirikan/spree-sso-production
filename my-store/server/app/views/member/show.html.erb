@@ -1,0 +1,199 @@
+<%# Member Portal - LINE LIFF, mobile-first %>
+<% tier, next_tier, pts_needed, tier_icon = calc_tier(@points) %>
+<style>
+  :root {
+    --green: #06C755; --green-dark: #00A040;
+    --bg: #f0f2f5; --card: #fff;
+    --text: #1a1a2e; --muted: #6b7280; --border: #e5e7eb;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    padding: 20px 16px 32px; color: #fff;
+  }
+  .profile-row { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.6);
+    object-fit: cover; background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; overflow: hidden; flex-shrink: 0;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-info h2 { font-size: 16px; font-weight: 700; }
+  .profile-info p  { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+  .points-card {
+    margin: -16px 16px 0; background: #fff; border-radius: 16px;
+    padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    display: flex; gap: 0;
+  }
+  .stat { flex: 1; text-align: center; }
+  .stat + .stat { border-left: 1px solid var(--border); }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--green); }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .section { margin: 16px; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0 8px; cursor: pointer; user-select: none;
+  }
+  .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .chevron { width: 20px; height: 20px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+  .section-body { overflow: hidden; transition: max-height 0.3s ease; }
+  .section-body.collapsed { max-height: 0 !important; }
+
+  .order-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .order-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .order-num  { font-size: 13px; font-weight: 600; }
+  .order-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .order-price { font-size: 14px; font-weight: 700; color: var(--text); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; margin-top: 6px; }
+  .badge-paid      { background: #dcfce7; color: #16a34a; }
+  .badge-pending   { background: #fef9c3; color: #ca8a04; }
+  .badge-cancelled { background: #fee2e2; color: #dc2626; }
+  .order-items { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .order-items li { font-size: 11px; color: var(--muted); padding: 1px 0; list-style: none; }
+
+  .empty { text-align: center; padding: 24px 0; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .progress-bar-wrap { background: #e5e7eb; border-radius: 99px; height: 8px; margin-top: 10px; overflow: hidden; }
+  .progress-bar { background: var(--green); height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+
+  .tier-card {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .tier-icon { font-size: 28px; }
+  .tier-name { font-size: 14px; font-weight: 700; color: #92400e; }
+  .tier-sub  { font-size: 11px; color: #b45309; margin-top: 2px; }
+
+  .logout-row { text-align: center; padding: 8px 16px 32px; }
+  .btn-logout {
+    background: none; border: 1px solid #e5e7eb;
+    color: #6b7280; border-radius: 99px;
+    padding: 8px 24px; font-size: 12px; cursor: pointer;
+  }
+</style>
+
+<div class="header">
+  <div class="profile-row">
+    <div class="avatar">
+      <% if @line_picture.present? %>
+        <img src="<%= @line_picture %>" alt="">
+      <% else %>
+        👤
+      <% end %>
+    </div>
+    <div class="profile-info">
+      <h2><%= @line_name || @user.first_name || 'สมาชิก' %></h2>
+      <p><%= @user.email %></p>
+    </div>
+  </div>
+</div>
+
+<div class="points-card">
+  <div class="stat">
+    <div class="stat-val"><%= number_with_delimiter(@points) %></div>
+    <div class="stat-lbl">คะแนนสะสม</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val"><%= @total_orders %></div>
+    <div class="stat-lbl">คำสั่งซื้อ</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">฿<%= number_with_delimiter(@total_spent.to_i) %></div>
+    <div class="stat-lbl">ยอดสะสม</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header" onclick="toggle('tier-body')">
+    <span class="section-title">ระดับสมาชิก</span>
+    <svg class="chevron" id="tier-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+  <div class="section-body" id="tier-body">
+    <div class="tier-card">
+      <div class="tier-icon"><%= tier_icon %></div>
+      <div>
+        <div class="tier-name"><%= tier %></div>
+        <% if next_tier %>
+          <div class="tier-sub">อีก <%= number_with_delimiter(pts_needed) %> คะแนน → <%= next_tier %></div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" style="width:<%= tier_progress(@points) %>%"></div>
+          </div>
+        <% else %>
+          <div class="tier-sub">ระดับสูงสุดแล้ว! 🏆</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header" onclick="toggle('orders-body')">
+    <span class="section-title">ประวัติการสั่งซื้อ (<%= @total_orders %>)</span>
+    <svg class="chevron" id="orders-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+  <div class="section-body" id="orders-body">
+    <% if @orders.empty? %>
+      <div class="empty">
+        <div class="empty-icon">🛍️</div>
+        ยังไม่มีประวัติการสั่งซื้อ
+      </div>
+    <% else %>
+      <% @orders.each do |order| %>
+        <div class="order-item">
+          <div class="order-top">
+            <div>
+              <div class="order-num"><%= order[:order_number] %></div>
+              <div class="order-date"><%= order[:created_at]&.to_date %></div>
+              <span class="badge badge-<%= order[:status] %>"><%= order[:status] %></span>
+            </div>
+            <div class="order-price">฿<%= number_with_delimiter(order[:total_price].to_i) %></div>
+          </div>
+          <% if order[:line_items]&.any? %>
+            <div class="order-items">
+              <ul>
+                <% order[:line_items].first(3).each do |item| %>
+                  <li>· <%= item[:title] %> x<%= item[:quantity] %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="logout-row">
+  <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+</div>
+
+<script>
+  function toggle(id) {
+    const el = document.getElementById(id);
+    const chev = document.getElementById(id.replace('-body', '-chev'));
+    const collapsed = el.classList.toggle('collapsed');
+    if (chev) chev.style.transform = collapsed ? 'rotate(-90deg)' : '';
+    el.style.maxHeight = collapsed ? '0' : el.scrollHeight + 'px';
+  }
+
+  document.querySelectorAll('.section-body').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 'px';
+  });
+
+  async function logout() {
+    await fetch('/api/line/logout', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
+      credentials: 'same-origin'
+    });
+    window.location.href = '/member/login';
+  }
+</script>
