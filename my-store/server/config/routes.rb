@@ -12,6 +12,14 @@ Rails.application.routes.draw do
     end
   end
 
+  # Jotform webhook — POST /api/jotform/webhook?token=... (see JotformConnection).
+  # The token is a query param so Rails filters it from request logs.
+  # Declared before the Spree mount so the engine at '/' doesn't shadow it.
+  namespace :api do
+    post 'jotform/webhook', to: 'jotform#webhook', as: :jotform_webhook
+    get 'jotform/submissions', to: 'jotform_submissions#index', as: :jotform_submissions
+  end
+
   # This line mounts Spree's routes at the root of your application.
   # This means, any requests to URLs such as /products, will go to
   # Spree::ProductsController.
