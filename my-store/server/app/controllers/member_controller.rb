@@ -1,4 +1,5 @@
 class MemberController < ApplicationController
+  include LineLoginGate
   layout 'member'
   before_action :require_line_session
 

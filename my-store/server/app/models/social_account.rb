@@ -1,5 +1,5 @@
 class SocialAccount < ApplicationRecord
-  belongs_to :spree_user, class_name: Spree.user_class.to_s
+  belongs_to :spree_user, class_name: Spree.customer_class.to_s
 
   validates :provider, presence: true
   validates :uid, presence: true

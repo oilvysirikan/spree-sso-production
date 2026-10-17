@@ -1,4 +1,5 @@
 class Api::LineAuthController < ApplicationController
+  include LineLoginGate
   skip_before_action :verify_authenticity_token
 
   # POST /api/line/callback
